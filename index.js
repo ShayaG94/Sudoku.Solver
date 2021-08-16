@@ -1,15 +1,5 @@
 const sudoku = {
-    board: [
-        [, , , , , , , ,],
-        [, , , , , , , ,],
-        [, , , , , , , ,],
-        [, , , , , , , ,],
-        [, , , , , , , ,],
-        [, , , , , , , ,],
-        [, , , , , , , ,],
-        [, , , , , , , ,],
-        [, , , , , , , ,],
-    ],
+    board: [...new Array(9)].map((el) => new Array(9)),
 
     setBoard: function (newBoard) {
         this.board = newBoard;
@@ -17,13 +7,6 @@ const sudoku = {
 
     getBoard: function () {
         return this.board;
-    },
-
-    get2DArray: function () {
-        const board = [[], [], [], [], [], [], [], [], []];
-        const cells = document.querySelectorAll(".cell");
-        cells.forEach((cell) => (board[cell.dataset.x][cell.dataset.y] = parseInt(cell.value)));
-        return board;
     },
 
     checkRow: function (currentCell, num) {
@@ -56,7 +39,10 @@ const sudoku = {
         };
         for (let i = squareRange.x.start; i <= squareRange.x.end; i++) {
             for (let j = squareRange.y.start; j <= squareRange.y.end; j++) {
-                if (this.board[i][j] === num && (i !== currentCell.x || j !== currentCell.y)) {
+                if (
+                    this.board[i][j] === num &&
+                    (i !== currentCell.x || j !== currentCell.y)
+                ) {
                     return false;
                 }
             }
@@ -65,17 +51,20 @@ const sudoku = {
     },
 
     validateCell: function (currentCell, num) {
-        return this.checkRow(currentCell, num) && this.checkCol(currentCell, num) && this.checkSquare(currentCell, num);
+        return (
+            this.checkRow(currentCell, num) &&
+            this.checkCol(currentCell, num) &&
+            this.checkSquare(currentCell, num)
+        );
     },
 
-    solvePuzzle: function () {
+    solve: function () {
         const emptyCell = this.findEmptyCell();
         if (!emptyCell) return true;
-        this.board[emptyCell.x][emptyCell.y] = 0;
         for (let num = 1; num <= 9; num++) {
             if (this.validateCell(emptyCell, num)) {
                 this.board[emptyCell.x][emptyCell.y] = num;
-                if (this.solvePuzzle()) return true;
+                if (this.solve()) return true;
             }
             this.board[emptyCell.x][emptyCell.y] = 0;
         }
@@ -94,39 +83,54 @@ const sudoku = {
     },
 };
 
-const buildGridBoard = (function () {
-    const board = document.querySelector(".board");
-    for (let i = 0; i < 9; i++) {
-        for (let j = 0; j < 9; j++) {
-            const cell = document.createElement("input");
-            cell.classList.add("cell");
-            cell.classList.add(`x-${i + 1}`);
-            cell.classList.add(`y-${j + 1}`);
-            cell.setAttribute("type", "number");
-            cell.setAttribute("min", "0");
-            cell.setAttribute("max", "9");
-            cell.dataset.x = i;
-            cell.dataset.y = j;
-            cell.value = "";
-            board.append(cell);
+const cacheDOM = {
+    buildGridBoard: function () {
+        const board = document.querySelector('.board');
+        for (let i = 0; i < 9; i++) {
+            for (let j = 0; j < 9; j++) {
+                const cell = document.createElement('input');
+                cell.classList.add('cell');
+                cell.classList.add(`x-${i + 1}`);
+                cell.classList.add(`y-${j + 1}`);
+                cell.setAttribute('type', 'number');
+                cell.setAttribute('min', '0');
+                cell.setAttribute('max', '9');
+                cell.dataset.x = i;
+                cell.dataset.y = j;
+                cell.value = '';
+                board.append(cell);
+            }
         }
-    }
+    },
+
+    get2DArrayFromHtml: function () {
+        const board = [...new Array(9)].map((el) => new Array(9));
+        const cells = document.querySelectorAll('.cell');
+        cells.forEach(
+            (cell) =>
+                (board[cell.dataset.x][cell.dataset.y] = parseInt(cell.value))
+        );
+        return board;
+    },
+
+    getSolvedBoard: function () {
+        const board = this.get2DArrayFromHtml();
+        sudoku.setBoard(board);
+        sudoku.solve();
+        const solvedBoard = sudoku.getBoard();
+        this.showSolution(solvedBoard);
+    },
+
+    showSolution: function (board) {
+        const cells = document.querySelectorAll('.cell');
+        cells.forEach(
+            (cell) => (cell.value = board[cell.dataset.x][cell.dataset.y])
+        );
+    },
+    solveBtn: document.querySelector('.solve-btn'),
+};
+
+const main = (function () {
+    cacheDOM.buildGridBoard();
+    cacheDOM.solveBtn.addEventListener('click', cacheDOM.getSolvedBoard);
 })();
-
-function solve() {
-    const board = sudoku.get2DArray();
-    sudoku.setBoard(board);
-    sudoku.solvePuzzle();
-    return sudoku.getBoard();
-}
-
-function showSolution(board) {
-    const cells = document.querySelectorAll(".cell");
-    cells.forEach((cell) => (cell.value = board[cell.dataset.x][cell.dataset.y]));
-}
-
-const solveBtn = document.querySelector(".solve-btn");
-solveBtn.addEventListener("click", function (e) {
-    const solvedBoard = solve();
-    showSolution(solvedBoard);
-});
