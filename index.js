@@ -92,9 +92,7 @@ const HTMLGame = {
         for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {
                 const cell = document.createElement('input');
-                cell.classList.add('cell');
-                cell.classList.add(`x-${i + 1}`);
-                cell.classList.add(`y-${j + 1}`);
+                cell.classList.add('cell', `x-${i + 1}`, `y-${j + 1}`);
                 cell.setAttribute('type', 'number');
                 cell.setAttribute('min', '0');
                 cell.setAttribute('max', '9');
