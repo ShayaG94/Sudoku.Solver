@@ -98,9 +98,9 @@ const htmlGame = {
             for (let j = 0; j < 9; j++) {
                 const cell = document.createElement("input");
                 cell.classList.add("cell", `x-${i + 1}`, `y-${j + 1}`);
-                cell.setAttribute("type", "number");
-                cell.setAttribute("min", "0");
-                cell.setAttribute("max", "9");
+                cell.setAttribute("type", "text");
+                cell.setAttribute("maxlength", "1");
+                cell.setAttribute("inputmode", "numeric");
                 cell.dataset.x = i;
                 cell.dataset.y = j;
                 board.append(cell);
