@@ -88,7 +88,7 @@ const sudoku = (function () {
         return board;
     }
 
-    return { setBoard, solve, getBoard };
+    return { findEmptyCell, setBoard, solve, getBoard };
 })();
 
 const htmlGame = {
@@ -103,9 +103,17 @@ const htmlGame = {
                 cell.setAttribute("inputmode", "numeric");
                 cell.dataset.x = i;
                 cell.dataset.y = j;
+                cell.dataset.solution = 0;
                 board.append(cell);
             }
         }
+    },
+
+    validateInput: function (input) {
+        if (typeof input == "number") {
+            return true;
+        }
+        return false;
     },
 
     get2DArray: function () {
@@ -121,20 +129,43 @@ const htmlGame = {
         return sudoku.solve();
     },
 
-    showSolution: function (board) {
+    updateSolution: function (board) {
         const cells = document.querySelectorAll(".cell");
+        cells.forEach((cell) => (cell.dataset.solution = board[cell.dataset.x][cell.dataset.y]));
+    },
 
-        cells.forEach((cell) => (cell.value = board[cell.dataset.x][cell.dataset.y]));
+    emptyCell: function () {
+        const cells = document.querySelectorAll(".cell");
+        for (cell of cells) {
+            if (cell.value == 0) {
+                return cell;
+            }
+        }
+        return false;
+    },
+
+    showHint: function () {
+        const emptyCell = this.emptyCell();
+        console.log(emptyCell);
+        if (emptyCell) {
+            emptyCell.value = emptyCell.dataset.solution;
+        }
+    },
+
+    showSolution: function () {
+        const cells = document.querySelectorAll(".cell");
+        cells.forEach((cell) => (cell.value = cell.dataset.solution));
     },
 
     clearBoard: function () {
         const cells = document.querySelectorAll(".cell");
 
         cells.forEach((cell) => (cell.value = ""));
+        cells.forEach((cell) => (cell.dataset.solution = 0));
     },
 
     solveBtn: document.querySelector(".solve-btn"),
-
+    hintBtn: document.querySelector(".hint-btn"),
     clearBtn: document.querySelector(".clear-btn"),
 };
 
@@ -146,7 +177,18 @@ const main = (function () {
     htmlGame.solveBtn.addEventListener("click", function (e) {
         if (htmlGame.solve()) {
             const solvedBoard = sudoku.getBoard();
-            htmlGame.showSolution(solvedBoard);
+            htmlGame.updateSolution(solvedBoard);
+            htmlGame.showSolution();
+        } else {
+            alert("Unsolavable Puzzle!");
+        }
+    });
+
+    htmlGame.hintBtn.addEventListener("click", function (e) {
+        if (htmlGame.solve()) {
+            const solvedBoard = sudoku.getBoard();
+            htmlGame.updateSolution(solvedBoard);
+            htmlGame.showHint();
         } else {
             alert("Unsolavable Puzzle!");
         }
