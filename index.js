@@ -2,8 +2,8 @@ const sudoku = (function () {
     let board;
 
     function checkRow(currentCell, num) {
-        for (let i = 0; i < 9; i++) {
-            if (board[currentCell.x][i] === num && i !== currentCell.y) {
+        for (let y = 0; y < 9; y++) {
+            if (board[currentCell.x][y] === num && y !== currentCell.y) {
                 return false;
             }
         }
@@ -11,8 +11,8 @@ const sudoku = (function () {
     }
 
     function checkCol(currentCell, num) {
-        for (let i = 0; i < 9; i++) {
-            if (board[i][currentCell.y] === num && i !== currentCell.x) {
+        for (let x = 0; x < 9; x++) {
+            if (board[x][currentCell.y] === num && x !== currentCell.x) {
                 return false;
             }
         }
@@ -29,9 +29,9 @@ const sudoku = (function () {
             x: innerSquares.find((element) => element.end >= currentCell.x),
             y: innerSquares.find((element) => element.end >= currentCell.y),
         };
-        for (let i = squareRange.x.start; i <= squareRange.x.end; i++) {
-            for (let j = squareRange.y.start; j <= squareRange.y.end; j++) {
-                if (board[i][j] === num && (i !== currentCell.x || j !== currentCell.y)) {
+        for (let x = squareRange.x.start; x <= squareRange.x.end; x++) {
+            for (let y = squareRange.y.start; y <= squareRange.y.end; y++) {
+                if (board[x][y] === num && (x !== currentCell.x || y !== currentCell.y)) {
                     return false;
                 }
             }
@@ -88,7 +88,7 @@ const sudoku = (function () {
         return board;
     }
 
-    return { findEmptyCell, setBoard, solve, getBoard };
+    return { validateCell, setBoard, solve, getBoard };
 })();
 
 const htmlGame = {
@@ -104,17 +104,18 @@ const htmlGame = {
                 cell.dataset.x = i;
                 cell.dataset.y = j;
                 cell.dataset.solution = 0;
+                cell.dataset.boardValue = 0;
                 board.append(cell);
             }
         }
     },
 
-    validateInput: function (input) {
-        if (typeof input == "number") {
-            return true;
-        }
-        return false;
-    },
+    // validateInput: function (input) {
+    //     if (typeof input == "number") {
+    //         return true;
+    //     }
+    //     return false;
+    // },
 
     get2DArray: function () {
         const board = [...Array(9)].map((e) => Array(9));
@@ -123,33 +124,47 @@ const htmlGame = {
         return board;
     },
 
-    solve: function () {
+    setBoard: function () {
         const board = this.get2DArray();
         sudoku.setBoard(board);
-        return sudoku.solve();
+    },
+
+    solve: function () {
+        this.setBoard();
+        if (sudoku.solve()) {
+            const solvedBoard = sudoku.getBoard();
+            this.updateSolution(solvedBoard);
+            return true;
+        } else {
+            alert("Unsolavable Puzzle!");
+            return false;
+        }
     },
 
     updateSolution: function (board) {
         const cells = document.querySelectorAll(".cell");
         cells.forEach((cell) => (cell.dataset.solution = board[cell.dataset.x][cell.dataset.y]));
+        this.setBoard();
     },
 
-    emptyCell: function () {
+    boardValue: function () {
+        let boardValue = 0;
         const cells = document.querySelectorAll(".cell");
         for (cell of cells) {
             if (cell.value == 0) {
-                return cell;
+                let cellCoords = { x: parseInt(cell.dataset.x), y: parseInt(cell.dataset.y) };
+                for (let num = 1; num <= 9; num++) {
+                    if (sudoku.validateCell(cellCoords, num)) {
+                        boardValue++;
+                    }
+                }
             }
         }
-        return false;
+        return boardValue;
     },
 
     showHint: function () {
-        const emptyCell = this.emptyCell();
-        console.log(emptyCell);
-        if (emptyCell) {
-            emptyCell.value = emptyCell.dataset.solution;
-        }
+        console.log(this.boardValue());
     },
 
     showSolution: function () {
@@ -170,27 +185,17 @@ const htmlGame = {
 };
 
 const main = (function () {
-    window.addEventListener("load", function (e) {
-        htmlGame.buildGridBoard();
-    });
+    window.addEventListener("load", htmlGame.buildGridBoard);
 
     htmlGame.solveBtn.addEventListener("click", function (e) {
         if (htmlGame.solve()) {
-            const solvedBoard = sudoku.getBoard();
-            htmlGame.updateSolution(solvedBoard);
             htmlGame.showSolution();
-        } else {
-            alert("Unsolavable Puzzle!");
         }
     });
 
     htmlGame.hintBtn.addEventListener("click", function (e) {
         if (htmlGame.solve()) {
-            const solvedBoard = sudoku.getBoard();
-            htmlGame.updateSolution(solvedBoard);
             htmlGame.showHint();
-        } else {
-            alert("Unsolavable Puzzle!");
         }
     });
 
