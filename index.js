@@ -78,6 +78,10 @@ const sudoku = (function () {
         return solvePuzzle();
     }
 
+    function setCell({ x, y }, solution) {
+        board[x][y] = solution;
+    }
+
     function setBoard(newBoard) {
         if (Array.isArray(newBoard)) {
             board = newBoard;
@@ -88,7 +92,7 @@ const sudoku = (function () {
         return board;
     }
 
-    return { validateCell, setBoard, solve, getBoard };
+    return { validateCell, setCell, setBoard, solve, getBoard };
 })();
 
 const htmlGame = {
@@ -119,8 +123,7 @@ const htmlGame = {
 
     get2DArray: function () {
         const board = [...Array(9)].map((e) => Array(9));
-        const cells = document.querySelectorAll(".cell");
-        cells.forEach((cell) => (board[cell.dataset.x][cell.dataset.y] = parseInt(cell.value) || ""));
+        this.cells.forEach((cell) => (board[cell.dataset.x][cell.dataset.y] = parseInt(cell.value) || ""));
         return board;
     },
 
@@ -142,17 +145,15 @@ const htmlGame = {
     },
 
     updateSolution: function (board) {
-        const cells = document.querySelectorAll(".cell");
-        cells.forEach((cell) => (cell.dataset.solution = board[cell.dataset.x][cell.dataset.y]));
+        this.cells.forEach((cell) => (cell.dataset.solution = board[cell.dataset.x][cell.dataset.y]));
         this.setBoard();
     },
 
-    boardValue: function () {
+    calcBoardValue: function () {
         let boardValue = 0;
-        const cells = document.querySelectorAll(".cell");
-        for (cell of cells) {
+        for (cell of this.cells) {
             if (cell.value == 0) {
-                let cellCoords = { x: parseInt(cell.dataset.x), y: parseInt(cell.dataset.y) };
+                const cellCoords = { x: parseInt(cell.dataset.x), y: parseInt(cell.dataset.y) };
                 for (let num = 1; num <= 9; num++) {
                     if (sudoku.validateCell(cellCoords, num)) {
                         boardValue++;
@@ -163,29 +164,62 @@ const htmlGame = {
         return boardValue;
     },
 
+    getHintCell: function () {
+        const hintCell = { boardValue: 0 };
+        for (cell of this.cells) {
+            this.setBoard();
+            if (cell.value == 0) {
+                const cellInfo = { coords: { x: parseInt(cell.dataset.x), y: parseInt(cell.dataset.y) }, value: parseInt(cell.dataset.solution) };
+                sudoku.setCell(cellInfo.coords, cellInfo.value);
+                const boardValue = this.calcBoardValue();
+                if (boardValue > hintCell.boardValue) {
+                    hintCell.boardValue = boardValue;
+                    hintCell.coords = cellInfo.coords;
+                }
+            }
+        }
+        return hintCell.coords;
+    },
+
     showHint: function () {
-        console.log(this.boardValue());
+        const hintCellCoords = this.getHintCell();
+        this.cells.forEach((cell) => {
+            if (parseInt(cell.dataset.x) === hintCellCoords.x && parseInt(cell.dataset.y) === hintCellCoords.y) {
+                console.log(cell.dataset.solution);
+                cell.value = cell.dataset.solution;
+            }
+        });
+        if (!Array.from(htmlGame.cells).some((cell) => cell.value == 0)) {
+            htmlGame.hintBtn.classList.add("disabled");
+        }
     },
 
     showSolution: function () {
-        const cells = document.querySelectorAll(".cell");
-        cells.forEach((cell) => (cell.value = cell.dataset.solution));
+        this.cells.forEach((cell) => (cell.value = cell.dataset.solution));
+        htmlGame.solveBtn.classList.add("disabled");
+        htmlGame.hintBtn.classList.add("disabled");
     },
 
     clearBoard: function () {
-        const cells = document.querySelectorAll(".cell");
-
-        cells.forEach((cell) => (cell.value = ""));
-        cells.forEach((cell) => (cell.dataset.solution = 0));
+        htmlGame.cells.forEach((cell) => {
+            cell.value = "";
+            cell.dataset.solution = 0;
+        });
+        htmlGame.solveBtn.classList.remove("disabled");
+        htmlGame.hintBtn.classList.remove("disabled");
     },
 
     solveBtn: document.querySelector(".solve-btn"),
     hintBtn: document.querySelector(".hint-btn"),
     clearBtn: document.querySelector(".clear-btn"),
+    cells: null,
 };
 
 const main = (function () {
-    window.addEventListener("load", htmlGame.buildGridBoard);
+    window.addEventListener("load", function (e) {
+        htmlGame.buildGridBoard();
+        htmlGame.cells = document.querySelectorAll(".cell");
+    });
 
     htmlGame.solveBtn.addEventListener("click", function (e) {
         if (htmlGame.solve()) {
